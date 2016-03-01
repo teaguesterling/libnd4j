@@ -772,7 +772,7 @@ double   NativeOps::execSummaryStatsScalarDouble(
         int opNum,
         long x,
         long xShapeInfo,
-        long extraParams){
+        long extraParams,bool biasCorrected){
     double *xPointer = reinterpret_cast<double *>(x);
     int *xShapeInfoPointer = reinterpret_cast<int *>(xShapeInfo);
     double *extraParamsPointer = reinterpret_cast<double *>(extraParams);
@@ -809,7 +809,7 @@ void   NativeOps::execSummaryStatsDouble(
         long xShapeInfo,
         long extraParams,
         long result,
-        long resultShapeInfo) {
+        long resultShapeInfo,bool biasCorrected) {
     double *xPointer = reinterpret_cast<double *>(x);
     int *xShapeInfoPointer = reinterpret_cast<int *>(xShapeInfo);
     double *resultPointer = reinterpret_cast<double *>(result);
@@ -848,7 +848,7 @@ void   NativeOps::execSummaryStatsDouble(
         long extraParams,
         long result,
         long resultShapeInfoBuffer,
-        long dimension, int dimensionLength){
+        long dimension, int dimensionLength,bool biasCorrected){
     double *xPointer = reinterpret_cast<double *>(x);
     int *xShapeInfoPointer = reinterpret_cast<int *>(xShapeInfo);
     double *resultPointer = reinterpret_cast<double *>(result);
@@ -1564,7 +1564,7 @@ float   NativeOps::execSummaryStatsScalarFloat(
         int opNum,
         long x,
         long xShapeInfo,
-        long extraParams){
+        long extraParams,bool biasCorrected){
     float *xPointer = reinterpret_cast<float *>(x);
     int *xShapeInfoPointer = reinterpret_cast<int *>(xShapeInfo);
     float *extraParamsPointer = reinterpret_cast<float *>(extraParams);
@@ -1600,7 +1600,7 @@ void   NativeOps::execSummaryStatsFloat(
         long xShapeInfo,
         long extraParams,
         long result,
-        long resultShapeInfo){
+        long resultShapeInfo,bool biasCorrected){
     float *xPointer = reinterpret_cast<float *>(x);
     int *xShapeInfoPointer = reinterpret_cast<int *>(xShapeInfo);
     float *resultPointer = reinterpret_cast<float *>(result);
@@ -1640,7 +1640,7 @@ void   NativeOps::execSummaryStatsFloat(
         long result,
         long resultShapeInfoBuffer,
         long dimension,
-        int dimensionLength){
+        int dimensionLength,bool biasCorrected){
     float *xPointer = reinterpret_cast<float *>(x);
     int *xShapeInfoPointer = reinterpret_cast<int *>(xShapeInfo);
     float *resultPointer = reinterpret_cast<float *>(result);

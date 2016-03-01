@@ -348,6 +348,8 @@ struct SharedSummaryStatsData<double> {
  */
         template<typename T>
         class SummaryStatsReduce: public  functions::ops::Op<T> {
+        private:
+            bool isBiasCorrected = true;
 
         public:
             /**
@@ -1551,7 +1553,7 @@ struct SharedSummaryStatsData<double> {
 #ifdef __CUDACC__
             __inline__ __host__ __device__
 #endif
-            functions::summarystats::SummaryStatsReduce<T> * getOp(int op) {
+            functions::summarystats::SummaryStatsReduce<T> * getOp(int op,bool biasCorrected) {
                 if (op == 0) {
                     return new functions::summarystats::ops::Variance<T>();
                 } else if (op == 1) {
@@ -1591,14 +1593,14 @@ __device__ void summaryStatsReduceGeneric(
 		T *result,
 		int *resultShapeInfo,
 		int *dimension,
-		int dimensionLength, int postProcessOrNot) {
+		int dimensionLength, int postProcessOrNot,,bool biasCorrected) {
 	__shared__ functions::summarystats::SummaryStatsReduce<T> *indexReduce;
 	__shared__ functions::summarystats::SummaryStatsReduceOpFactory<T> *newOpFactory;
 	if(threadIdx.x == 0)
 		newOpFactory = new functions::summarystats::SummaryStatsReduceOpFactory<T>();
 	__syncthreads();
 	if(threadIdx.x == 0)
-		indexReduce = newOpFactory->getOp(op);
+		indexReduce = newOpFactory->getOp(op,biasCorrected);
 	__syncthreads();
 	indexReduce->transform(dx,xShapeInfo,extraParams,result,resultShapeInfo,dimension,dimensionLength,postProcessOrNot);
 	if(threadIdx.x == 0) {
@@ -1621,7 +1623,7 @@ __device__ void summaryStatsReduceGeneric(
  * @param dimensionLength the length of the dimension
  * @param postProcessOrNot whether to post process or not
  */
-extern "C" __global__ void summaryStatsReduceDouble(
+__global__ void summaryStatsReduceDouble(
 		int op,
 		double *dx,
 		int *xShapeInfo,
@@ -1630,7 +1632,7 @@ extern "C" __global__ void summaryStatsReduceDouble(
 		int *resultShapeInfo,
 		int *dimension,
 		int dimensionLength,
-		int postProcessOrNot) {
+		int postProcessOrNot,bool biasCorrected) {
 	summaryStatsReduceGeneric<double>(
 			op,
 			dx,
@@ -1640,7 +1642,7 @@ extern "C" __global__ void summaryStatsReduceDouble(
 			resultShapeInfo,
 			dimension,
 			dimensionLength,
-			postProcessOrNot);
+			postProcessOrNot,biasCorrected);
 
 }
 
@@ -1667,7 +1669,7 @@ extern "C" __global__ void summaryStatsReduceFloat(
 		int *resultShapeInfo,
 		int *dimension,
 		int dimensionLength,
-		int postProcessOrNot) {
+		int postProcessOrNot,bool biasCorrected) {
 	summaryStatsReduceGeneric<float>(
 			op,
 			dx,
@@ -1677,7 +1679,7 @@ extern "C" __global__ void summaryStatsReduceFloat(
 			resultShapeInfo,
 			dimension,
 			dimensionLength,
-			postProcessOrNot);
+			postProcessOrNot,biasCorrected);
 
 }
 
