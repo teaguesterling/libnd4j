@@ -167,7 +167,7 @@ public:
 
     virtual void createOperationAndOpFactory() {
         opFactory = new functions::summarystats::SummaryStatsReduceOpFactory<T>();
-        reduce = opFactory->getOp(this->opNum);
+        reduce = opFactory->getOp(this->opNum,true);
     }
 
     virtual void execCpuKernel() override {
