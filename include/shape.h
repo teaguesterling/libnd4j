@@ -2202,14 +2202,18 @@ namespace shape {
 
         int numEncountered = 0;
         int numDimensionsOne = 0;
+        bool dimensionZeroCollapsed = false;
         for(int i = 0; i < wholeRank; i++) {
             if(shape[i] != 1) {
                 squeezeShape[numEncountered] = shape[i];
                 squeezeStride[numEncountered] = stride[i];
                 numEncountered++;
             }
-            else
+            else {
+                if(i == 0)
+                    dimensionZeroCollapsed = true;
                 numDimensionsOne++;
+            }
         }
 
         if(numDimensionsOne > 0) {
@@ -2225,33 +2229,12 @@ namespace shape {
             }
 
 
-            //double check no dimensions are negative, if so remove them
-            bool negOneFound = false;
-            int negOneIndex = -1;
-            printf("Before neg one found\n");
-            for(int i = 0; i < newDimensionsLength; i++) {
-                if(newDimensions[i] < 0) {
-                    negOneFound = true;
-                    negOneIndex = i;
-                    break;
-                }
-
-            }
 
             printf("After neg one found with new dimension length %d\n",newDimensionsLength);
-            if(negOneFound) {
-                printf("Neg one index was %d\n",negOneIndex);
-                int *newDimensionsTwo = new int[newDimensionsLength];
-                int currIdx = 0;
-                for(int i = 0; i < newDimensionsLength; i++) {
-                    if(i != negOneIndex)
-                        newDimensionsTwo[currIdx++] = newDimensions[i];
-                }
-
-                delete[] newDimensions;
+            if(dimensionZeroCollapsed) {
                 //reduce along the new dimensions
-                *dimensionRef = newDimensionsTwo;
-                *dimensionLengthRef  = newDimensionsLength;
+                *dimensionRef = newDimensions;
+                *dimensionLengthRef  = newDimensionsLength - 1;
             }
             else {
                 printf("Non neg one found\n");
