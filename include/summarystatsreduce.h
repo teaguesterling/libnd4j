@@ -1600,6 +1600,12 @@ __device__ void summaryStatsReduceGeneric(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::summarystats::SummaryStatsReduceOpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::summarystats::SummaryStatsReduce<T>)];
 
+	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::summarystats::SummaryStatsReduce<T> *indexReduce;
 	__shared__ functions::summarystats::SummaryStatsReduceOpFactory<T> *newOpFactory;
 	if(threadIdx.x == 0) {
@@ -1608,7 +1614,7 @@ __device__ void summaryStatsReduceGeneric(
 	}
 	__syncthreads();
 
-	indexReduce->transform(dx,xShapeInfo,extraParams,result,resultShapeInfo,dimension,dimensionLength,postProcessOrNot, allocationBuffer, reductionBuffer);
+	indexReduce->transform(dx,sharedXShapeInfo,extraParams,result,sharedResultShapeInfo,dimension,dimensionLength,postProcessOrNot, allocationBuffer, reductionBuffer);
 }
 
 /**

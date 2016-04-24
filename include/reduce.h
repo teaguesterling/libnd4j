@@ -1890,6 +1890,11 @@ __global__ void reduceGenericGlobal(
     __shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::reduce::ReduceOpFactory<T>)];
     __shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::reduce::ReduceFunction<T>)];
 
+    __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
 
 	__shared__ functions::reduce::ReduceFunction<T> *reduceFunctionToInvoke;
 	__shared__ functions::reduce::ReduceOpFactory<T> *newOpFactory;
@@ -1901,10 +1906,10 @@ __global__ void reduceGenericGlobal(
 	__syncthreads();
 	reduceFunctionToInvoke->transformCuda(
 			dx,
-			xShapeInfo
-			,extraParams,
+			sharedXShapeInfo,
+			extraParams,
 			result,
-			resultShapeInfo,
+			sharedResultShapeInfo,
 			dimension,
 			dimensionLength,
 			postProcessOrNot,
@@ -1942,6 +1947,13 @@ __device__ void reduceGeneric(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::reduce::ReduceOpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::reduce::ReduceFunction<T>)];
 
+    __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
+
 	__shared__ functions::reduce::ReduceFunction<T> *reduceFunctionToInvoke;
 	__shared__ functions::reduce::ReduceOpFactory<T> *newOpFactory;
 
@@ -1952,10 +1964,10 @@ __device__ void reduceGeneric(
 	__syncthreads();
 	reduceFunctionToInvoke->transformCuda(
 			dx,
-			xShapeInfo
-			,extraParams,
+			sharedXShapeInfo,
+			extraParams,
 			result,
-			resultShapeInfo,
+			sharedResultShapeInfo,
 			dimension,
 			dimensionLength,
 			postProcessOrNot,

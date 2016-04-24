@@ -2016,6 +2016,14 @@ __device__ void pairWiseTransformGeneric(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::pairwise_transforms::PairWiseTransformOpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::pairwise_transforms::PairWiseTransform<T>)];
 
+	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::pairwise_transforms::PairWiseTransform<T> *op;
 	__shared__ functions::pairwise_transforms::PairWiseTransformOpFactory<T> *newOpFactory;
 	if(threadIdx.x == 0) {
@@ -2024,7 +2032,7 @@ __device__ void pairWiseTransformGeneric(
 	}
 	__syncthreads();
 
-	op->transformCuda(dx,xShapeInfo,dy,yShapeInfo,result,resultShapeInfo,params, allocationPointer);
+	op->transformCuda(dx,sharedXShapeInfo,dy,sharedYShapeInfo,result,sharedResultShapeInfo,params, allocationPointer);
 }
 
 
@@ -2139,6 +2147,14 @@ __device__ void pairWiseTransformGeneric(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::pairwise_transforms::PairWiseTransformOpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::pairwise_transforms::PairWiseTransform<T>)];
 
+	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::pairwise_transforms::PairWiseTransform<T> *op;
 	__shared__ functions::pairwise_transforms::PairWiseTransformOpFactory<T> *newOpFactory;
 
@@ -2150,11 +2166,11 @@ __device__ void pairWiseTransformGeneric(
 
 	op->transform(
 			dx,
-			xShapeInfo,
+			sharedXShapeInfo,
 			dy,
-			yShapeInfo,
+			sharedYShapeInfo,
 			result,
-			resultShapeInfo,
+			sharedResultShapeInfo,
 			params,
 			xIndexes,
 			yIndexes,

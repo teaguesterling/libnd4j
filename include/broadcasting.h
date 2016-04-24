@@ -902,6 +902,14 @@ __device__ void broadcastGeneric(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::broadcast::BroadcastOpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::broadcast::Broadcast<T>)];
 
+	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::broadcast::Broadcast<T> *op;
 	__shared__ functions::broadcast::BroadcastOpFactory<T> *newOpFactory;
 	if(threadIdx.x == 0) {
@@ -913,11 +921,11 @@ __device__ void broadcastGeneric(
 
 	op->transformCuda(
 			x,
-			xShapeInfo,
+			sharedXShapeInfo,
 			y,
-			yShapeInfo,
+			sharedYShapeInfo,
 			result,
-			resultShapeInfo,
+			sharedResultShapeInfo,
 			dimension,
 			dimensionLength);
 }

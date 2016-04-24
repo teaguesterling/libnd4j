@@ -5706,6 +5706,12 @@ __device__ void transformGeneric(
     __shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::transform::TransformOpFactory<T>)];
     __shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::transform::Transform<T>)];
 
+    __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(shapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::transform::Transform<T> *op;
 	__shared__ functions::transform::TransformOpFactory<T> *doubleTransformFactory;
 
@@ -5716,7 +5722,7 @@ __device__ void transformGeneric(
 	__syncthreads();
 
 
-	op->transformCuda(dy,shapeInfo,params,result,resultShapeInfo, allocationPointer, reductionPointer);
+	op->transformCuda(dy,sharedXShapeInfo,params,result,sharedResultShapeInfo, allocationPointer, reductionPointer);
 }
 
 
@@ -5805,6 +5811,10 @@ __device__ void transformGenericIndexes(
     __shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::transform::TransformOpFactory<T>)];
     __shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::transform::Transform<T>)];
 
+    __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(shapeInfo, sharedXShapeInfo);
+
 	__shared__ functions::transform::Transform<T> *op;
 	__shared__ functions::transform::TransformOpFactory<T> *doubleTransformFactory;
 
@@ -5815,7 +5825,7 @@ __device__ void transformGenericIndexes(
 	__syncthreads();
 
 
-	op->transformCuda(dy,shapeInfo,params,result,indexes,allocationPointer, reductionPointer);
+	op->transformCuda(dy,sharedXShapeInfo,params,result,indexes,allocationPointer, reductionPointer);
 }
 
 

@@ -1527,6 +1527,14 @@ __inline__ __device__ void reduce3NoElementWiseStrideGeneric(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::reduce3::Reduce3OpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::reduce3::Reduce3<T>)];
 
+    __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::reduce3::Reduce3<T> * op;
 	__shared__ functions::reduce3::Reduce3OpFactory<T> *reduce3OpFactory;
 
@@ -1536,7 +1544,7 @@ __inline__ __device__ void reduce3NoElementWiseStrideGeneric(
 	}
 	__syncthreads();
 
-	op->transformNoElementWiseStride(dx,xShapeInfo,dy,yShapeInfo,extraParams,result,resultShapeInfo,postProcessOrNot, allocationPointer);
+	op->transformNoElementWiseStride(dx,sharedXShapeInfo,dy,sharedYShapeInfo,extraParams,result,sharedResultShapeInfo,postProcessOrNot, allocationPointer);
 }
 
 
@@ -1620,6 +1628,14 @@ __device__ void reduce3Generic(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::reduce3::Reduce3OpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::reduce3::Reduce3<T>)];
 
+    __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::reduce3::Reduce3<T> * op;
 	__shared__ functions::reduce3::Reduce3OpFactory<T> *reduce3OpFactory;
 
@@ -1631,11 +1647,12 @@ __device__ void reduce3Generic(
 
 	op->transform(
 			dx,
-			xShapeInfo,
-			dy,yShapeInfo,
+			sharedXShapeInfo,
+			dy,
+			sharedYShapeInfo,
 			extraParams,
 			result,
-			resultShapeInfo,
+			sharedResultShapeInfo,
 			dimension,
 			dimensionLength,
 			postProcessOrNot, allocationPointer);

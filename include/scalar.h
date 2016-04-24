@@ -1295,6 +1295,12 @@ __device__ void scalarGeneric(
 	__shared__ unsigned char  __align__(8) factoryBuffer[sizeof(functions::scalar::ScalarOpFactory<T>)];
 	__shared__ unsigned char  __align__(8) functionBuffer[sizeof(functions::scalar::ScalarTransform<T>)];
 
+	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
+    __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
+
+    shape::sweepShapeInfoBuffer(shapeInfo, sharedXShapeInfo);
+    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+
 	__shared__ functions::scalar::ScalarTransform<T> *op;
 	__shared__  functions::scalar::ScalarOpFactory<T> *scalarDoubleOpFactory;
 
@@ -1305,7 +1311,7 @@ __device__ void scalarGeneric(
 	__syncthreads();
 
 
-	op->transformCuda(dx,dy,shapeInfo,params,result,resultShapeInfo, allocationBuffer);
+	op->transformCuda(dx,dy,sharedXShapeInfo,params,result,sharedResultShapeInfo, allocationBuffer);
 }
 
 extern "C" __global__ void scalarDouble(
