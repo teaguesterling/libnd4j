@@ -5699,7 +5699,7 @@ template <typename T>
 __device__ void transformGeneric(
 		int opNum,
 		T *dy,
-		int *shapeInfo,
+		int *xShapeInfo,
 		T *params,
 		T *result,int *resultShapeInfo, int *allocationPointer, T *reductionPointer) {
 
@@ -5709,8 +5709,18 @@ __device__ void transformGeneric(
     __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
     __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(shapeInfo, sharedXShapeInfo);
-    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    __shared__ int *ptrSharedXShapeInfo;
+    __shared__ int *ptrSharedZShapeInfo;
+
+	if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
+
+    if (resultShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedZShapeInfo = sharedResultShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedZShapeInfo = resultShapeInfo;
 
 	__shared__ functions::transform::Transform<T> *op;
 	__shared__ functions::transform::TransformOpFactory<T> *doubleTransformFactory;
@@ -5722,7 +5732,14 @@ __device__ void transformGeneric(
 	__syncthreads();
 
 
-	op->transformCuda(dy,sharedXShapeInfo,params,result,sharedResultShapeInfo, allocationPointer, reductionPointer);
+	op->transformCuda(
+	            dy,
+	            ptrSharedXShapeInfo,
+	            params,
+	            result,
+	            ptrSharedZShapeInfo,
+	            allocationPointer,
+	            reductionPointer);
 }
 
 
@@ -5804,7 +5821,7 @@ template <typename T>
 __device__ void transformGenericIndexes(
 		int opNum,
 		T *dy,
-		int *shapeInfo,
+		int *xShapeInfo,
 		T *params,
 		T *result,int *indexes, int *allocationPointer, T *reductionPointer) {
 
@@ -5813,7 +5830,12 @@ __device__ void transformGenericIndexes(
 
     __shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(shapeInfo, sharedXShapeInfo);
+    __shared__ int *ptrSharedXShapeInfo;
+
+    if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
 
 	__shared__ functions::transform::Transform<T> *op;
 	__shared__ functions::transform::TransformOpFactory<T> *doubleTransformFactory;
@@ -5825,7 +5847,14 @@ __device__ void transformGenericIndexes(
 	__syncthreads();
 
 
-	op->transformCuda(dy,sharedXShapeInfo,params,result,indexes,allocationPointer, reductionPointer);
+	op->transformCuda(
+	           dy,
+	           ptrSharedXShapeInfo,
+	           params,
+	           result,
+	           indexes,
+	           allocationPointer,
+	           reductionPointer);
 }
 
 

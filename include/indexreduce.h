@@ -1271,8 +1271,18 @@ __device__ void indexReduceGeneric(
 	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
     __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
-    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+	__shared__ int *ptrSharedXShapeInfo;
+    __shared__ int *ptrSharedZShapeInfo;
+
+	if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
+
+    if (resultShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedZShapeInfo = sharedResultShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedZShapeInfo = resultShapeInfo;
 
 	__shared__ functions::indexreduce::IndexReduce<T> *indexReduce;
 	__shared__ functions::indexreduce::IndexReduceOpFactory<T> *newOpFactory;
@@ -1284,10 +1294,10 @@ __device__ void indexReduceGeneric(
 
 	indexReduce->transform(
 		dx,
-		sharedXShapeInfo,
+		ptrSharedXShapeInfo,
 		extraParams,
 		result,
-		sharedResultShapeInfo,
+		ptrSharedZShapeInfo,
 		dimension,
 		dimensionLength,
 		postProcessOrNot,

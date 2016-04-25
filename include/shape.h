@@ -4887,11 +4887,7 @@ __device__ int tadOffset(int *xInfo, int offset) {
 #ifdef __CUDACC__
     __device__
     inline void sweepShapeInfoBuffer(int *shapeInfoBuffer, int *targetBuffer) {
-        // we read first byte, to find out length of our shapeInfoBuffer
-        if (shapeInfoBuffer == nullptr) {
-            targetBuffer = nullptr;
-            return;
-        }
+        // we read first element, to find out length of our shapeInfoBuffer
 
         int rank = shapeInfoBuffer[0];
         int len = rank * 2 + 4;

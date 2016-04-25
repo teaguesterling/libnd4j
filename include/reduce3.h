@@ -1531,9 +1531,24 @@ __inline__ __device__ void reduce3NoElementWiseStrideGeneric(
 	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
     __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
-    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
-    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+ 	__shared__ int *ptrSharedXShapeInfo;
+    __shared__ int *ptrSharedYShapeInfo;
+    __shared__ int *ptrSharedZShapeInfo;
+
+	if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
+
+    if (yShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedYShapeInfo = sharedYShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedYShapeInfo = yShapeInfo;
+
+    if (resultShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedZShapeInfo = sharedResultShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedZShapeInfo = resultShapeInfo;
 
 	__shared__ functions::reduce3::Reduce3<T> * op;
 	__shared__ functions::reduce3::Reduce3OpFactory<T> *reduce3OpFactory;
@@ -1544,7 +1559,16 @@ __inline__ __device__ void reduce3NoElementWiseStrideGeneric(
 	}
 	__syncthreads();
 
-	op->transformNoElementWiseStride(dx,sharedXShapeInfo,dy,sharedYShapeInfo,extraParams,result,sharedResultShapeInfo,postProcessOrNot, allocationPointer);
+	op->transformNoElementWiseStride(
+	            dx,
+	            ptrSharedXShapeInfo,
+	            dy,
+	            ptrSharedYShapeInfo,
+	            extraParams,
+	            result,
+	            ptrSharedZShapeInfo,
+	            postProcessOrNot,
+	            allocationPointer);
 }
 
 
@@ -1632,9 +1656,24 @@ __device__ void reduce3Generic(
 	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
     __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
-    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
-    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    __shared__ int *ptrSharedXShapeInfo;
+    __shared__ int *ptrSharedYShapeInfo;
+    __shared__ int *ptrSharedZShapeInfo;
+
+	if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
+
+    if (yShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedYShapeInfo = sharedYShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedYShapeInfo = yShapeInfo;
+
+    if (resultShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedZShapeInfo = sharedResultShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedZShapeInfo = resultShapeInfo;
 
 	__shared__ functions::reduce3::Reduce3<T> * op;
 	__shared__ functions::reduce3::Reduce3OpFactory<T> *reduce3OpFactory;
@@ -1647,12 +1686,12 @@ __device__ void reduce3Generic(
 
 	op->transform(
 			dx,
-			sharedXShapeInfo,
+			ptrSharedXShapeInfo,
 			dy,
-			sharedYShapeInfo,
+			ptrSharedYShapeInfo,
 			extraParams,
 			result,
-			sharedResultShapeInfo,
+			ptrSharedZShapeInfo,
 			dimension,
 			dimensionLength,
 			postProcessOrNot, allocationPointer);

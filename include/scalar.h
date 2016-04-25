@@ -1288,7 +1288,7 @@ __device__ void scalarGeneric(
 		int opNum,
 		T dx,
 		T *dy,
-		int *shapeInfo,
+		int *xShapeInfo,
 		T *params,
 		T *result,int *resultShapeInfo, int *allocationBuffer) {
 
@@ -1298,8 +1298,18 @@ __device__ void scalarGeneric(
 	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
     __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(shapeInfo, sharedXShapeInfo);
-    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    __shared__ int *ptrSharedXShapeInfo;
+    __shared__ int *ptrSharedZShapeInfo;
+
+	if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
+
+    if (resultShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedZShapeInfo = sharedResultShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedZShapeInfo = resultShapeInfo;
 
 	__shared__ functions::scalar::ScalarTransform<T> *op;
 	__shared__  functions::scalar::ScalarOpFactory<T> *scalarDoubleOpFactory;
@@ -1311,7 +1321,14 @@ __device__ void scalarGeneric(
 	__syncthreads();
 
 
-	op->transformCuda(dx,dy,sharedXShapeInfo,params,result,sharedResultShapeInfo, allocationBuffer);
+	op->transformCuda(
+	            dx,
+	            dy,
+	            ptrSharedXShapeInfo,
+	            params,
+	            result,
+	            ptrSharedZShapeInfo,
+	            allocationBuffer);
 }
 
 extern "C" __global__ void scalarDouble(

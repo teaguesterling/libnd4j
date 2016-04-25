@@ -1603,8 +1603,18 @@ __device__ void summaryStatsReduceGeneric(
 	__shared__ int sharedXShapeInfo[MAX_RANK * 2 + 4];
     __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
-    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    __shared__ int *ptrSharedXShapeInfo;
+    __shared__ int *ptrSharedZShapeInfo;
+
+	if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
+
+    if (resultShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedZShapeInfo = sharedResultShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedZShapeInfo = resultShapeInfo;
 
 	__shared__ functions::summarystats::SummaryStatsReduce<T> *indexReduce;
 	__shared__ functions::summarystats::SummaryStatsReduceOpFactory<T> *newOpFactory;
@@ -1614,7 +1624,17 @@ __device__ void summaryStatsReduceGeneric(
 	}
 	__syncthreads();
 
-	indexReduce->transform(dx,sharedXShapeInfo,extraParams,result,sharedResultShapeInfo,dimension,dimensionLength,postProcessOrNot, allocationBuffer, reductionBuffer);
+	indexReduce->transform(
+	        dx,
+	        ptrSharedXShapeInfo,
+	        extraParams,
+	        result,
+	        ptrSharedZShapeInfo,
+	        dimension,
+	        dimensionLength,
+	        postProcessOrNot,
+	        allocationBuffer,
+	        reductionBuffer);
 }
 
 /**

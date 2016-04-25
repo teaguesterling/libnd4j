@@ -906,9 +906,24 @@ __device__ void broadcastGeneric(
 	__shared__ int sharedYShapeInfo[MAX_RANK * 2 + 4];
     __shared__ int sharedResultShapeInfo[MAX_RANK * 2 + 4];
 
-    shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
-    shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
-    shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    __shared__ int *ptrSharedXShapeInfo;
+    __shared__ int *ptrSharedYShapeInfo;
+    __shared__ int *ptrSharedZShapeInfo;
+
+	if (xShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(xShapeInfo, sharedXShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedXShapeInfo = sharedXShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedXShapeInfo = xShapeInfo;
+
+    if (yShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(yShapeInfo, sharedYShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedYShapeInfo = sharedYShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedYShapeInfo = yShapeInfo;
+
+	if (resultShapeInfo != nullptr) {
+    	shape::sweepShapeInfoBuffer(resultShapeInfo, sharedResultShapeInfo);
+    	if (threadIdx.x == 0) ptrSharedZShapeInfo = sharedResultShapeInfo;
+    } else if (threadIdx.x == 0) ptrSharedZShapeInfo = resultShapeInfo;
 
 	__shared__ functions::broadcast::Broadcast<T> *op;
 	__shared__ functions::broadcast::BroadcastOpFactory<T> *newOpFactory;
@@ -921,11 +936,11 @@ __device__ void broadcastGeneric(
 
 	op->transformCuda(
 			x,
-			sharedXShapeInfo,
+			ptrSharedXShapeInfo,
 			y,
-			sharedYShapeInfo,
+			ptrSharedYShapeInfo,
 			result,
-			sharedResultShapeInfo,
+			ptrSharedZShapeInfo,
 			dimension,
 			dimensionLength);
 }
