@@ -871,7 +871,7 @@ public:
     void concatDouble(
             int dimension,
             Nd4jPointer *data,
-            Nd4jPointer inputShapeInfo,
+            Nd4jPointer *inputShapeInfo,
             Nd4jPointer result,
             Nd4jPointer resultShapeInfo);
 

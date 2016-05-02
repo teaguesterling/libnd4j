@@ -1527,7 +1527,6 @@ void concatGeneric(
         Nd4jPointer *inputShapeInfo,
         Nd4jPointer result,
         Nd4jPointer resultShapeInfo) {
-
     int *resultShapeInfoPointer = reinterpret_cast<int *>(resultShapeInfo);
     int *resultShape = shape::shapeOf(resultShapeInfoPointer);
     //number of total arrays, every other dimension should be the same
@@ -1682,7 +1681,7 @@ void concatGeneric(
   * Concatneate multi array of the same shape together
   * along a particular dimension
   */
-void concatFloat(
+void NativeOps::concatFloat(
         int dimension,
         Nd4jPointer *data,
         Nd4jPointer *inputShapeInfo,
@@ -1700,7 +1699,7 @@ void concatFloat(
     * Concatneate multi array of the same shape together
     * along a particular dimension
     */
-void concatDouble(
+void NativeOps::concatDouble(
         int dimension,
         Nd4jPointer *data,
         Nd4jPointer *inputShapeInfo,
