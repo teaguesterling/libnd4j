@@ -1554,6 +1554,22 @@ void concatGeneric(
     }
 
     int length = shape::length(resultShapeInfoPointer);
+
+
+    if(allC && dimension == 0) {
+        int currBuffer = 0;
+        int currBufferOffset = 0;
+        for(int i = 0; i <  length; i++) {
+            resultPointer[i] = inputShapeInfoPointers[currBuffer][currBufferOffset++];
+            if(currBufferOffset >= shape::length(inputShapeInfoPointers[currBuffer])) {
+                currBuffer++;
+                currBufferOffset = 0;
+            }
+        }
+
+        return;
+    }
+
     //tad shape information for result
     shape::TAD resultTad(resultShapeInfoPointer,&dimension,1);
     resultTad.createTadOnlyShapeInfo();
