@@ -1527,6 +1527,7 @@ void concatGeneric(
         Nd4jPointer *inputShapeInfo,
         Nd4jPointer result,
         Nd4jPointer resultShapeInfo) {
+
     int *resultShapeInfoPointer = reinterpret_cast<int *>(resultShapeInfo);
     int *resultShape = shape::shapeOf(resultShapeInfoPointer);
     //number of total arrays, every other dimension should be the same
@@ -1543,7 +1544,7 @@ void concatGeneric(
     //we are merging all scalars
     if(shape::isScalar(inputShapeInfoPointers[0])) {
         for(int i = 0; i < numArrays; i++) {
-            resultPointer[i] = dataBuffers[0];
+            resultPointer[i] = dataBuffers[i][0];
         }
     }
 
@@ -1574,7 +1575,7 @@ void concatGeneric(
         for(int j = 0; j < arrTad.numTads; j++) {
             T *arrTadData = dataBuffers[j] + arrTad.tadOffsets[i];
             //result tad offset + the current offset for each tad + array offset (matches current array)
-            T *currResultTadWithOffset = result + resultTad.tadOffsets[j] + arrOffset;
+            T *currResultTadWithOffset = resultPointer + resultTad.tadOffsets[j] + arrOffset;
             if(arrTadEleStride > 0) {
                 if(arrTadEleStride == 1 && resultTadEleStride == 1) {
                     //iterate over the specified chunk of the tad
@@ -1584,7 +1585,7 @@ void concatGeneric(
                 } //element wise stride isn't 1 for both can't use memcpy
                 else if(tadEleStride > 0) {
                     for(int k = 0; k < arrTadLength; k++) {
-                        currResultTadWithOffset[k * tadEleStride] = arrTad[k * arrTadEleStride];
+                        currResultTadWithOffset[k * tadEleStride] = arrTadData[k * arrTadEleStride];
                     }
                 }
             }
@@ -1639,53 +1640,35 @@ void concatGeneric(
                     int dim;
                     int xStridesIter[MAX_RANK];
                     int resultStridesIter[MAX_RANK];
-                    int *xShape = shape::shapeOf(xShapeBuffer);
-                    int *xStride = shape::stride(xShapeBuffer);
-                    int *resultStride = shape::stride(resultShapeBuffer);
-                    int rank = shape::rank(xShapeBuffer);
-                    T *originalResult = result;
+                    int *xShape = shape::shapeOf(arrTad.tadOnlyShapeInfo);
+                    int *xStride = shape::stride(arrTad.tadOnlyShapeInfo);
+                    int *resultStride = shape::stride(resultTad.tadOnlyShapeInfo);
+                    int rank = shape::rank(arrTad.tadOnlyShapeInfo);
                     if (PrepareTwoRawArrayIter<T>(rank,
                                                   xShape,
-                                                  dx,
+                                                  arrTadData,
                                                   xStride,
-                                                  result,
+                                                  currResultTadWithOffset,
                                                   resultStride,
                                                   &rank,
                                                   shapeIter,
-                                                  &dx,
+                                                  &arrTadData,
                                                   xStridesIter,
-                                                  &result,
+                                                  &currResultTadWithOffset,
                                                   resultStridesIter) >= 0) {
-                        T value = dx[0];
-                        int idx = 0;
-                        int maxIdx = 0;
                         ND4J_RAW_ITER_START(dim, rank, coord, shapeIter); {
-                                if(dx[0] > value) {
-                                    value = dx[0];
-                                    maxIdx = idx;
-                                }
-
-                                idx++;
-                                result[0] = 0.0;
-
-                            }
-                        ND4J_RAW_ITER_TWO_NEXT(
+                                currResultTadWithOffset[0] = arrTadData[0];
+                            } ND4J_RAW_ITER_TWO_NEXT(
                                 dim,
                                 rank,
                                 coord,
                                 shapeIter,
-                                dx,
+                                arrTadData,
                                 xStridesIter,
-                                result,
+                                currResultTadWithOffset,
                                 resultStridesIter);
 
-                        //pointer to where max value would be
-                        if(shape::order(resultShapeBuffer) == 'c' || (shape::order(resultShapeBuffer) == 'f' &&
-                                                                      maxIdx * shape::stride(resultShapeBuffer)[shape::rank(resultShapeBuffer) - 1] >=
-                                                                      shape::length(resultShapeBuffer)))
-                            originalResult[maxIdx] = 1.0;
-                        else
-                            originalResult[maxIdx * shape::stride(resultShapeBuffer)[shape::rank(resultShapeBuffer) - 1]] = 1.0;
+
                     }
                 }
             }
@@ -1751,7 +1734,14 @@ void NativeOps::flattenFloat(
         Nd4jPointer resultShapeInfo,
         Nd4jPointer input,
         Nd4jPointer inputShapeInfo) {
-    flattenGeneric<float>(extraPointers, offset, order,result,resultShapeInfo,input,inputShapeInfo);
+    flattenGeneric<float>(
+            extraPointers,
+            offset,
+            order,
+            result,
+            resultShapeInfo,
+            input,
+            inputShapeInfo);
 }
 
 
@@ -1774,7 +1764,14 @@ void NativeOps::flattenDouble(
         Nd4jPointer resultShapeInfo,
         Nd4jPointer input,
         Nd4jPointer inputShapeInfo) {
-    flattenGeneric<double>(extraPointers, offset, order,result,resultShapeInfo,input,inputShapeInfo);
+    flattenGeneric<double>(
+            extraPointers,
+            offset,
+            order,
+            result,
+            resultShapeInfo,
+            input,
+            inputShapeInfo);
 }
 
 /**
