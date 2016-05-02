@@ -1572,19 +1572,120 @@ void concatGeneric(
         int arrTadEleStride = shape::elementWiseStride(arrTad.tadOnlyShapeInfo);
         int arrTadLength = shape::length(arrTad.tadOnlyShapeInfo);
         for(int j = 0; j < arrTad.numTads; j++) {
-           T *arrTad = dataBuffers[j] + arrTad.tadOffsets[i];
+            T *arrTadData = dataBuffers[j] + arrTad.tadOffsets[i];
             //result tad offset + the current offset for each tad + array offset (matches current array)
             T *currResultTadWithOffset = result + resultTad.tadOffsets[j] + arrOffset;
             if(arrTadEleStride > 0) {
                 if(arrTadEleStride == 1 && resultTadEleStride == 1) {
                     //iterate over the specified chunk of the tad
                     for(int k = 0; k < arrTadLength; k++) {
-                        memcpy(currResultTadWithOffset,arrTad,sizeof(T) * arrTadLength);
+                        memcpy(currResultTadWithOffset,arrTadData,sizeof(T) * arrTadLength);
                     }
-                }
+                } //element wise stride isn't 1 for both can't use memcpy
                 else if(tadEleStride > 0) {
                     for(int k = 0; k < arrTadLength; k++) {
                         currResultTadWithOffset[k * tadEleStride] = arrTad[k * arrTadEleStride];
+                    }
+                }
+            }
+            else {
+                int idx = 0;
+                //use element wise stride for result but not this tad
+                if(tadEleStride > 0) {
+                    if(arrTad.wholeThing) {
+                        for(int k = 0; k < shape::length(arrTad.tadOnlyShapeInfo); k++) {
+                            currResultTadWithOffset[idx *resultTadEleStride] = arrTadData[k];
+
+                        }
+                    }
+                    else {
+                        int shapeIter[MAX_RANK];
+                        int coord[MAX_RANK];
+                        int dim;
+                        int rankIter = shape::rank(arrTad.tadOnlyShapeInfo);
+                        int xStridesIter[MAX_RANK];
+                        if (PrepareOneRawArrayIter<T>(rankIter,
+                                                      shape::shapeOf(arrTad.tadOnlyShapeInfo),
+                                                      arrTadData,
+                                                      shape::stride(arrTad.tadOnlyShapeInfo),
+                                                      &rankIter,
+                                                      shapeIter,
+                                                      &arrTadData,
+                                                      xStridesIter) >= 0) {
+                            ND4J_RAW_ITER_START(dim, shape::rank(arrTad.tadOnlyShapeInfo), coord, shapeIter); {
+                                    /* Process the innermost dimension */
+                                    currResultTadWithOffset[idx *resultTadEleStride] = arrTadData[0];
+                                }
+                            ND4J_RAW_ITER_ONE_NEXT(dim,
+                                                   rankIter,
+                                                   coord,
+                                                   shapeIter,
+                                                   arrTadData,
+                                                   xStridesIter);
+
+                        }
+                        else {
+                            printf("Unable to prepare array\n");
+                        }
+
+
+                    }
+
+                }
+                    //don't use element wise stride for either
+                else {
+                    int shapeIter[MAX_RANK];
+                    int coord[MAX_RANK];
+                    int dim;
+                    int xStridesIter[MAX_RANK];
+                    int resultStridesIter[MAX_RANK];
+                    int *xShape = shape::shapeOf(xShapeBuffer);
+                    int *xStride = shape::stride(xShapeBuffer);
+                    int *resultStride = shape::stride(resultShapeBuffer);
+                    int rank = shape::rank(xShapeBuffer);
+                    T *originalResult = result;
+                    if (PrepareTwoRawArrayIter<T>(rank,
+                                                  xShape,
+                                                  dx,
+                                                  xStride,
+                                                  result,
+                                                  resultStride,
+                                                  &rank,
+                                                  shapeIter,
+                                                  &dx,
+                                                  xStridesIter,
+                                                  &result,
+                                                  resultStridesIter) >= 0) {
+                        T value = dx[0];
+                        int idx = 0;
+                        int maxIdx = 0;
+                        ND4J_RAW_ITER_START(dim, rank, coord, shapeIter); {
+                                if(dx[0] > value) {
+                                    value = dx[0];
+                                    maxIdx = idx;
+                                }
+
+                                idx++;
+                                result[0] = 0.0;
+
+                            }
+                        ND4J_RAW_ITER_TWO_NEXT(
+                                dim,
+                                rank,
+                                coord,
+                                shapeIter,
+                                dx,
+                                xStridesIter,
+                                result,
+                                resultStridesIter);
+
+                        //pointer to where max value would be
+                        if(shape::order(resultShapeBuffer) == 'c' || (shape::order(resultShapeBuffer) == 'f' &&
+                                                                      maxIdx * shape::stride(resultShapeBuffer)[shape::rank(resultShapeBuffer) - 1] >=
+                                                                      shape::length(resultShapeBuffer)))
+                            originalResult[maxIdx] = 1.0;
+                        else
+                            originalResult[maxIdx * shape::stride(resultShapeBuffer)[shape::rank(resultShapeBuffer) - 1]] = 1.0;
                     }
                 }
             }
