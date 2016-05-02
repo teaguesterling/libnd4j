@@ -3368,6 +3368,7 @@ void NativeOps::setOmpNumThreads(int threads) {
   */
 void void NativeOps::concatFloat(
         int dimension,
+        int numArrays,
         Nd4jPointer *data,
         Nd4jPointer *inputShapeInfo,
         Nd4jPointer result,
@@ -3381,6 +3382,7 @@ void void NativeOps::concatFloat(
     */
 void NativeOps::concatDouble(
         int dimension,
+        int numArrays,
         Nd4jPointer *data,
         Nd4jPointer *inputShapeInfo,
         Nd4jPointer result,

@@ -1523,6 +1523,7 @@ void flattenGeneric(Nd4jPointer *extraPointers,
 template <typename T>
 void concatGeneric(
         int dimension,
+        int numArrays,
         Nd4jPointer *data,
         Nd4jPointer *inputShapeInfo,
         Nd4jPointer result,
@@ -1530,7 +1531,6 @@ void concatGeneric(
     int *resultShapeInfoPointer = reinterpret_cast<int *>(resultShapeInfo);
     int *resultShape = shape::shapeOf(resultShapeInfoPointer);
     //number of total arrays, every other dimension should be the same
-    int numArrays = resultShape[dimension];
     T **dataBuffers = reinterpret_cast<T **>(data);
     int **inputShapeInfoPointers = reinterpret_cast<int **>(inputShapeInfo);
     T *resultPointer = reinterpret_cast<T *>(result);
@@ -1560,7 +1560,7 @@ void concatGeneric(
         int currBuffer = 0;
         int currBufferOffset = 0;
         for(int i = 0; i <  length; i++) {
-            resultPointer[i] = inputShapeInfoPointers[currBuffer][currBufferOffset++];
+            resultPointer[i] = dataBuffers[currBuffer][currBufferOffset++];
             if(currBufferOffset >= shape::length(inputShapeInfoPointers[currBuffer])) {
                 currBuffer++;
                 currBufferOffset = 0;
@@ -1699,12 +1699,14 @@ void concatGeneric(
   */
 void NativeOps::concatFloat(
         int dimension,
+        int numArrays,
         Nd4jPointer *data,
         Nd4jPointer *inputShapeInfo,
         Nd4jPointer result,
         Nd4jPointer resultShapeInfo) {
     concatGeneric<float>(
             dimension,
+            numArrays,
             data,
             inputShapeInfo,
             result,
@@ -1717,12 +1719,14 @@ void NativeOps::concatFloat(
     */
 void NativeOps::concatDouble(
         int dimension,
+        int numArrays,
         Nd4jPointer *data,
         Nd4jPointer *inputShapeInfo,
         Nd4jPointer result,
         Nd4jPointer resultShapeInfo) {
     concatGeneric<double>(
             dimension,
+            numArrays,
             data,
             inputShapeInfo,
             result,

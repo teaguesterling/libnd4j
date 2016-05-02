@@ -860,6 +860,7 @@ public:
     */
     void concatFloat(
             int dimension,
+            int numArrays,
             Nd4jPointer *data,
             Nd4jPointer *inputShapeInfo,
             Nd4jPointer result,
@@ -870,6 +871,7 @@ public:
     */
     void concatDouble(
             int dimension,
+            int numArrays,
             Nd4jPointer *data,
             Nd4jPointer *inputShapeInfo,
             Nd4jPointer result,
