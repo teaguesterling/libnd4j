@@ -1588,15 +1588,14 @@ void concatGeneric(
         int arrTadEleStride = shape::elementWiseStride(arrTad.tadOnlyShapeInfo);
         int arrTadLength = shape::length(arrTad.tadOnlyShapeInfo);
         for(int j = 0; j < arrTad.numTads; j++) {
-            T *arrTadData = dataBuffers[j] + arrTad.tadOffsets[i];
+            T *arrTadData = dataBuffers[i] + arrTad.tadOffsets[j];
             //result tad offset + the current offset for each tad + array offset (matches current array)
-            T *currResultTadWithOffset = resultPointer + resultTad.tadOffsets[j] + arrOffset;
+            T *currResultTadWithOffset = resultPointer  + resultTad.tadOffsets[j] + arrOffset;
             if(arrTadEleStride > 0) {
                 if(arrTadEleStride == 1 && resultTadEleStride == 1) {
                     //iterate over the specified chunk of the tad
-                    for(int k = 0; k < arrTadLength; k++) {
-                        memcpy(currResultTadWithOffset,arrTadData,sizeof(T) * arrTadLength);
-                    }
+                    memcpy(currResultTadWithOffset,arrTadData,sizeof(T) * arrTadLength);
+
                 } //element wise stride isn't 1 for both can't use memcpy
                 else if(tadEleStride > 0) {
                     for(int k = 0; k < arrTadLength; k++) {
@@ -1687,6 +1686,7 @@ void concatGeneric(
                     }
                 }
             }
+
         }
 
         arrOffset += shape::length(arrTad.tadOnlyShapeInfo);
