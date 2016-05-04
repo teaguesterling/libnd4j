@@ -3366,7 +3366,7 @@ void NativeOps::setOmpNumThreads(int threads) {
   * Concatneate multi array of the same shape together
   * along a particular dimension
   */
-void void NativeOps::concatFloat(
+ void NativeOps::concatFloat(
         int dimension,
         int numArrays,
         Nd4jPointer *data,
