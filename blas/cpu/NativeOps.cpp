@@ -1545,6 +1545,8 @@ void concatGeneric(
         for(int i = 0; i < numArrays; i++) {
             resultPointer[i] = dataBuffers[i][0];
         }
+
+        return;
     }
 
 
@@ -1564,6 +1566,53 @@ void concatGeneric(
             if(currBufferOffset >= shape::length(inputShapeInfoPointers[currBuffer])) {
                 currBuffer++;
                 currBufferOffset = 0;
+            }
+        }
+
+        return;
+    }
+
+    int resultStride = shape::elementWiseStride(resultShapeInfoPointer);
+    //vector case
+    if(shape::isVector(resultShapeInfoPointer)) {
+        int idx = 0;
+        Nd4jIndex  length = shape::length(resultShapeInfoPointer);
+        if(resultStride == 1) {
+            for(int i = 0; i < numArrays; i++) {
+                Nd4jIndex  currArrLength = shape::length(inputShapeInfoPointers[i]);
+                Nd4jIndex eleStride = shape::elementWiseStride(inputShapeInfoPointers[i]);
+                if(eleStride == 1) {
+                    for(Nd4jIndex arrIdx = 0; arrIdx < currArrLength; arrIdx++) {
+                        resultPointer[idx++] = dataBuffers[i][arrIdx];
+                    }
+                }
+                else {
+                    for(Nd4jIndex arrIdx = 0; arrIdx < currArrLength; arrIdx++) {
+                        resultPointer[idx++] = dataBuffers[i][arrIdx * eleStride];
+
+                    }
+                }
+
+            }
+        }
+        else {
+            for(int i = 0; i < numArrays; i++) {
+                Nd4jIndex  currArrLength = shape::length(inputShapeInfoPointers[i]);
+                Nd4jIndex eleStride = shape::elementWiseStride(inputShapeInfoPointers[i]);
+                if(eleStride == 1) {
+                    for(Nd4jIndex arrIdx = 0; arrIdx < currArrLength; arrIdx++) {
+                        resultPointer[idx * resultStride] = dataBuffers[i][arrIdx];
+                         idx++;
+                    }
+                }
+                else {
+                    for(Nd4jIndex arrIdx = 0; arrIdx < currArrLength; arrIdx++) {
+                        resultPointer[idx * resultStride] = dataBuffers[i][arrIdx * eleStride];
+                        idx++;
+
+                    }
+                }
+
             }
         }
 
@@ -1590,7 +1639,12 @@ void concatGeneric(
         for(int j = 0; j < arrTad.numTads; j++) {
             T *arrTadData = dataBuffers[i] + arrTad.tadOffsets[j];
             //result tad offset + the current offset for each tad + array offset (matches current array)
-            T *currResultTadWithOffset = resultPointer  + resultTad.tadOffsets[j] + arrOffset;
+            T *currResultTadWithOffset = resultPointer  + resultTad.tadOffsets[j];
+            //ensure we start at the proper index, we need to move the starting index forward relative to the desired array offset
+            int* sub = shape::ind2subC(shape::rank(resultTad.tadOnlyShapeInfo),shape::shapeOf(resultTad.tadOnlyShapeInfo),arrOffset);
+            Nd4jIndex baseOffset = shape::getOffset(0,shape::shapeOf(resultTad.tadOnlyShapeInfo),shape::stride(resultTad.tadOnlyShapeInfo),sub,shape::rank(resultTad.tadOnlyShapeInfo));
+            delete[] sub;
+            currResultTadWithOffset += baseOffset;
             if(arrTadEleStride > 0) {
                 if(arrTadEleStride == 1 && resultTadEleStride == 1) {
                     //iterate over the specified chunk of the tad
