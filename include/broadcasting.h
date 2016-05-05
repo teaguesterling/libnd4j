@@ -104,11 +104,21 @@ namespace functions {
             __syncthreads();
 
 			int tadOffsetForBlock = tad->tadOffsetForBlock;
-
-            for (int i = threadIdx.x; i < shape::length(tad->tadOnlyShapeInfo); i+= blockDim.x) {
-				// now we need coords for both X, Y. Z is uses the same coord as X in this case
-				// Y is always vector, however it might be stided
-				result[tadOffsetForBlock + i * tadEWS] = this->op(x[tadOffsetForBlock + i * tadEWS], y[i * yStride]);
+           
+            if(tadEWS > 0) {
+                for (int i = threadIdx.x; i < shape::length(tad->tadOnlyShapeInfo); i+= blockDim.x) {
+                    // now we need coords for both X, Y. Z is uses the same coord as X in this case
+                    // Y is always vector, however it might be stided
+                    result[tadOffsetForBlock + i * tadEWS] = this->op(x[tadOffsetForBlock + i * tadEWS], y[i * yStride]);
+                }
+            }
+            else {
+                int xCoord[MAX_RANK];
+                for (int i = threadIdx.x; i < shape::length(tad->tadOnlyShapeInfo); i+= blockDim.x) {
+                    shape::ind2subC(rank,tad->tadShape, i, xCoord);
+                    Nd4jIndex xOffset = shape::getOffset(tadOffsetForBlock, tad->tadShape, tad->tadStride, xCoord, rank);
+                    result[xOffset] = this->op(x[xOffset], y[i * yStride]);
+                }
             }
 		}
 	}
