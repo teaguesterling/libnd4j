@@ -224,9 +224,14 @@ namespace nd4j {
 		template<typename T>
 #ifdef __CUDACC__
 		__host__ __device__
-
 #endif
 		inline T nd4j_atan(T val);
+
+		template<typename T>
+#ifdef __CUDACC__
+		__host__ __device__
+#endif
+		inline T nd4j_atan2(T val1, T val2);
 
 #ifdef __CUDACC__
 		template<>
@@ -742,6 +747,38 @@ template<>
 #endif
 		inline int nd4j_atan<int>(int val) {
 			return atanf((float) val);
+		}
+
+#ifdef __CUDACC__
+		template<>
+		__host__ __device__
+		inline nd4j::float16 nd4j_atan2<nd4j::float16>(nd4j::float16 val1, nd4j::float16 val2) {
+			return (nd4j::float16) atan2f((float)val1, (float)val2);
+		}
+#endif
+
+		template<>
+#ifdef __CUDACC__
+		__host__ __device__
+#endif
+		inline float nd4j_atan2<float>(float val1, float val2) {
+			return atan2f(val1, val2);
+		}
+
+		template<>
+#ifdef __CUDACC__
+		__host__ __device__
+#endif
+		inline double nd4j_atan2<double>(double val1, double val2) {
+			return atan2(val1, val2);
+		}
+
+		template<>
+#ifdef __CUDACC__
+		__host__ __device__
+#endif
+		inline int nd4j_atan2<int>(int val1, int val2) {
+			return atan2f((float) val1, (float) val2);
 		}
 
 #ifdef __CUDACC__

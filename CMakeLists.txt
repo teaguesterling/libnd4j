@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 2.4)
 project(libnd4j)
 set( CMAKE_VERBOSE_MAKEFILE on )
 option(TESTS "Compile and make tests for the code?" OFF)

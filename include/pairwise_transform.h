@@ -43,7 +43,8 @@
         (14,simdOps::Min),\
         (15,simdOps::NotEqualTo),\
         (16,simdOps::Copy),\
-        (17,simdOps::Axpy)
+        (17,simdOps::Axpy),\
+        (18,simdOps::ATan2)
 
 
 
